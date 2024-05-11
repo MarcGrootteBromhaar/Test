@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Slot Machine Game</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 20px;
+    }
+    input, button {
+        padding: 8px;
+        margin: 5px;
+    }
+    #reels {
+        font-size: 24px;
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .reel {
+        padding: 10px;
+        border: 1px solid #333;
+        margin: 0 10px;
+    }
+</style>
+</head>
+<body>
+<h1>Slot Machine Game</h1>
+<div>
+    <label for="depositAmount">Deposit Amount:</label>
+    <input type="number" id="depositAmount" placeholder="Enter your deposit">
+    <button onclick="deposit()">Deposit</button>
+</div>
+<div>
+    <labelsetLines</label>
+    <div>
+        <input type="radio" id="oneLine" name="linesToBet" value="1">
+        <label for="oneLine">1</label>
+    </div>
+    <div>
+        <input type="radio" id="twoLines" name="linesToBet" value="2">
+        <label for="twoLines">2</label>
+    </div>
+    <div>
+        <input type="radio" id="threeLines" name="linesToBet" value="3">
+        <label for="threeLines">3</label>
+    </div>
+</div>
+<div>
+    <label for="betPerLine">Bet Per Line:</label>
+    <input type="number" id="betPerLine" placeholder="Enter your bet per line">
+    <button onclick="placeBet()">Place Bet</button>
+</div>
+<div id="reels">
+    <!-- Reels will be displayed here -->
+</div>
+<div id="gameArea">
+    <!-- Game outputs will be displayed here -->
+</div>
+<script>
+const SYMBOL_COUNT = { A: 2, B: 4, C: 6, D: 8 };
+const SYMBOL_VALUES = { A: 5, B: 4, C: 3, D: 2 };
+let balance = 0;
+let numberOfLines = 0;
+let betPerLine = 0;
+
+function deposit() {
+    const depositAmount = parseFloat(document.getElementById('depositAmount').value);
+    if (isNaN(depositAmount) || depositAmount <= 0) {
+        alert("Invalid deposit amount, try again.");
+    } else {
+        balance += depositAmount;
+        updateGameArea();
+    }
+}
+
+function setLines() {
+    const lines = parseInt(document.getElementById('linesToBet').value);
+    if (isNaN(lines) || lines < 1 || lines > 3) {
+        alert("Invalid number of lines, try again.");
+    } else {
+        numberOfLines = lines;
+    }
+}
+
+function placeBet() {
+    const bet = parseFloat(document.getElementById('betPerLine').value);
+    if (isNaN(bet) || bet <= 0 || bet > balance / numberOfLines) {
+        alert("Invalid bet, try again.");
+    } else {
+        betPerLine = bet;
+        playGame();
+    }
+}
+
+function playGame() {
+    if (betPerLine * numberOfLines > balance) {
+        alert("Insufficient balance for this bet.");
+        return;
+    }
+
+    balance -= betPerLine * numberOfLines;
+    const reels = spin();
+    displayReels(reels);
+    const rows = transpose(reels);
+    printRows(rows);
+    const winnings = calculateWinnings(rows);
+    balance += winnings;
+    updateGameArea();
+
+    if (balance <= 0) {
+        alert("You ran out of money.");
+    }
+}
+
+function spin() {
+    const symbols = [];
+    for (const [symbol, count] of Object.entries(SYMBOL_COUNT)) {
+        for (let i = 0; i < count; i++) {
+            symbols.push(symbol);
+        }
+    }
+    const reels = [];
+    for (let i = 0; i < 3; i++) {
+        reels.push([]);
+        const reelSymbols = [...symbols];
+        for (let j = 0; j < 3; j++) {
+            const randomIndex = Math.floor(Math.random() * reelSymbols.length);
+            const selectedSymbol = reelSymbols[randomIndex];
+            reels[i].push(selectedSymbol);
+            reelSymbols.splice(randomIndex, 1);
+        }
+    }
+    return reels;
+}
+
+function transpose(reels) {
+    const rows = [];
+    for (let i = 0; i < 3; i++) {
+        rows.push([]);
+        for (let j = 0; j < 3; j++) {
+            rows[i].push(reels[j][i]);
+        }
+    }
+    return rows;
+}
+
+function displayReels(reels) {
+    const reelsContainer = document.getElementById('reels');
+    reelsContainer.innerHTML = ''; // Clear previous reels
+    reels.forEach(column => {
+        const reelElem = document.createElement('div');
+        reelElem.className = 'reel';
+        reelElem.innerHTML = column.join('<br>');
+        reelsContainer.appendChild(reelElem);
+    });
+}
+
+function printRows(rows) {
+    let rowString = "Results:<br>";
+    rows.forEach(row => {
+        rowString += row.join(" | ") + "<br>";
+    });
+    document.getElementById('gameArea').innerHTML += rowString;
+}
+
+function calculateWinnings(rows) {
+    let winnings = 0;
+    for (let i = 0; i < numberOfLines; i++) {
+        if (rows[i].every(val => val === rows[i][0])) {
+            winnings += betPerLine * SYMBOL_VALUES[rows[i][0]];
+        }
+    }
+    return winnings;
+}
+
+function updateGameArea() {
+    document.getElementById('gameArea').innerHTML = "Balance: $" + balance.toFixed(2) + "<br>";
+}
+
+</script>
+</body>
+</html>
